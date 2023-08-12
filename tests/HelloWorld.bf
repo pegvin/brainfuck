@@ -1,4 +1,16 @@
-Simple Program That Outputs "Hello World\n" To STDOUT
+[
+	Source: https://en.wikipedia.org/wiki/Brainfuck#Hello_World!
+
+	This program prints "Hello World!" and a newline to the screen, its
+	length is 106 active command characters. [It is not the shortest.]
+
+	This loop is an "initial comment loop", a simple way of adding a comment
+	to a BF program such that you don't have to worry about any command
+	characters. Any ".", ",", "+", "-", "<" and ">" characters are simply
+	ignored, the "[" and "]" characters just have to be balanced. This
+	loop and the commands it contains are ignored because the current cell
+	defaults to a value of 0; the 0 value causes this loop to be skipped.
+]
 
 ++++++++                Set Cell #0 to 8
 [
@@ -15,7 +27,7 @@ Simple Program That Outputs "Hello World\n" To STDOUT
 	>-                  Subtract 1 from Cell #4
 	>>+                 Add 1 to Cell #6
 	[<]                 Move back to the first zero cell you find; this will
-						be Cell #1 which was cleared by the previous loop
+                        be Cell #1 which was cleared by the previous loop
 	<-                  Decrement the loop Counter in Cell #0
 ]                       Loop until Cell #0 is zero; number of iterations is 8
 
