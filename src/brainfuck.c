@@ -39,7 +39,7 @@ int Bf_Execute(struct BfContext* ctx, const char* const str, int64_t len) {
 			case '[': {
 				if (ctx->Tape[ctx->Pointer] == 0) {
 					int64_t NxtClosingBracket = Position + 1;
-					uint32_t BracketDepth = 0;
+					int64_t BracketDepth = 0;
 					while (1) {
 						if (NxtClosingBracket < len) break;
 						else if (str[NxtClosingBracket] == '\0') break;
@@ -61,7 +61,7 @@ int Bf_Execute(struct BfContext* ctx, const char* const str, int64_t len) {
 			case ']': {
 				if (ctx->Tape[ctx->Pointer] != 0) {
 					int64_t PrvOpeningBracket = Position - 1;
-					uint32_t BracketDepth = 0;
+					int64_t BracketDepth = 0;
 					while (1) {
 						if (PrvOpeningBracket <= 0) break;
 						else if (str[PrvOpeningBracket] == ']') BracketDepth++;
