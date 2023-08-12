@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -15,7 +15,7 @@ enum Bf_Errors {
 int Bf_InitializeContext(struct BfContext* ctx) {
 	if (ctx == NULL) return 1;
 
-	bzero(ctx->Tape, sizeof(ctx->Tape));
+	memset(ctx->Tape, 0, sizeof(ctx->Tape));
 	ctx->Pointer = 0;
 
 	return 0;

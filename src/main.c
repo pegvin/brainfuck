@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <errno.h>
 
 #include "brainfuck.h"
@@ -22,7 +21,7 @@ int main(int argc, char** argv) {
 	fseek(f, 0, SEEK_SET);
 
 	char* str = malloc(len);
-	bzero(str, len);
+	memset(str, 0, len);
 	if (str == NULL) {
 		printf("Error: malloc(...) %s\n", strerror(errno));
 		return 1;
