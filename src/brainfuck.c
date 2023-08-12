@@ -7,7 +7,8 @@
 
 enum Bf_Errors {
 	Bf_TAPE_OUT_OF_BOUND_ERROR = 1,
-	Bf_UNMATCHED_SQUARE_BRACKET,
+	Bf_UNMATCHED_OPEN_BRACKET,
+	Bf_UNMATCHED_CLOSE_BRACKET,
 	Bf_UNKNOWN_ERROR,
 };
 
@@ -41,7 +42,7 @@ int Bf_Execute(struct BfContext* ctx, const char* const str, int64_t len) {
 					int64_t NxtClosingBracket = Position + 1;
 					int64_t BracketDepth = 0;
 					while (1) {
-						if (NxtClosingBracket < len) break;
+						if (NxtClosingBracket >= len) break;
 						else if (str[NxtClosingBracket] == '\0') break;
 						else if (str[NxtClosingBracket] == '[') BracketDepth++;
 						else if (str[NxtClosingBracket] == ']') {
@@ -51,9 +52,14 @@ int Bf_Execute(struct BfContext* ctx, const char* const str, int64_t len) {
 
 						NxtClosingBracket++;
 					}
-					if (BracketDepth != 0) return Bf_UNMATCHED_SQUARE_BRACKET;
-					if (NxtClosingBracket < len && str[NxtClosingBracket] == ']') {
+					if (
+						NxtClosingBracket < len       &&
+						str[NxtClosingBracket] == ']' &&
+						BracketDepth == 0
+					) {
 						Position = NxtClosingBracket;
+					} else {
+						return Bf_UNMATCHED_CLOSE_BRACKET;
 					}
 				}
 				break;
@@ -72,9 +78,14 @@ int Bf_Execute(struct BfContext* ctx, const char* const str, int64_t len) {
 
 						PrvOpeningBracket--;
 					}
-					if (BracketDepth != 0) return Bf_UNMATCHED_SQUARE_BRACKET;
-					if (PrvOpeningBracket > -1 && str[PrvOpeningBracket] == '[') {
+					if (
+						PrvOpeningBracket > -1        &&
+						str[PrvOpeningBracket] == '[' &&
+						BracketDepth == 0
+					) {
 						Position = PrvOpeningBracket;
+					} else {
+						return Bf_UNMATCHED_OPEN_BRACKET;
 					}
 				}
 				break;
@@ -97,6 +108,12 @@ const char* const Bf_StrError(int err) {
 	switch (err) {
 		case Bf_TAPE_OUT_OF_BOUND_ERROR:
 			return "pointer out of bound";
+
+		case Bf_UNMATCHED_OPEN_BRACKET:
+			return "matching '[' not found";
+
+		case Bf_UNMATCHED_CLOSE_BRACKET:
+			return "matching ']' not found";
 
 		case Bf_UNKNOWN_ERROR:
 		default:
