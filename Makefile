@@ -26,12 +26,12 @@ endif
 all: $(BIN)
 
 $(BUILD)/%.c.o: %.c
-	@echo "CC  -" $<
+	@echo "CC -" $<
 	@mkdir -p "$$(dirname "$@")"
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 $(BIN): $(OBJECTS)
-	@echo Linking $@
+	@echo "LD -" $@
 	@$(CC) $(LFLAGS) $(OBJECTS) -o $@
 
 .PHONY: run

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "brainfuck.h"
 
@@ -101,6 +102,163 @@ int Bf_Execute(struct BfContext* ctx, const char* const str, int64_t len) {
 		Position++;
 	}
 
+	return 0;
+}
+
+int Bf_Compile(const char* inp, int64_t inpLen, char** out, int64_t* outLen) {
+	if (inp == NULL)
+		return Bf_UNKNOWN_ERROR;
+
+	if (inpLen < 1) return 0;
+
+	int64_t outStrSize = 0;
+	int64_t outStrLen = 0;
+	char* outStr = NULL;
+
+	#define D_WRITE(...) printf(__VA_ARGS__)
+
+	D_WRITE(
+		"#include <unistd.h>\n\n"
+		"int main(void) {\n"
+		"\tunsigned char data[30000];\n"
+		"\tunsigned int dataPtr = 0;\n"
+		"\tfor (int i = 0; i < 30000; i++) {\n\t\tdata[i] = 0;\n\t}\n"
+	);
+
+	uint64_t Line = 1;
+	uint64_t Col = 0;
+	int didArithOccur = 0;
+
+	for (int64_t i = 0; i < inpLen; i++) {
+		char c = inp[i];
+		if (c == '\n') {
+			Line++;
+			Col = 0;
+			continue;
+		} else {
+			Col++;
+		}
+
+		switch (c) {
+			case '>': {
+				D_WRITE("\tdataPtr += 1;\n");
+				break;
+			}
+			case '<': {
+				D_WRITE("\tdataPtr -= 1;\n");
+				break;
+			}
+			case '+': {
+				D_WRITE("\tdata[dataPtr] += 1;\n");
+				didArithOccur = 1;
+				break;
+			}
+			case '-': {
+				D_WRITE("\tdata[dataPtr] -= 1;\n");
+				didArithOccur = 1;
+				break;
+			}
+			case '.': {
+				D_WRITE("\twrite(STDOUT_FILENO, &data[dataPtr], 1);\n");
+				break;
+			}
+			case ',': {
+				D_WRITE("\tread(STDIN_FILENO, &data[dataPtr], 1);\n");
+				break;
+			}
+			case '[': {
+				int64_t NxtClosingBracket = i + 1;
+				int64_t BracketDepth = 0;
+				int64_t LineOff = 0;
+				while (1) {
+					if (NxtClosingBracket >= inpLen) {
+						break;
+					} else if (inp[NxtClosingBracket] == '[') {
+						BracketDepth++;
+					} else if (inp[NxtClosingBracket] == ']') {
+						if (BracketDepth == 0) break;
+						else BracketDepth--;
+					} else if (inp[NxtClosingBracket] == '\n') {
+						LineOff++;
+					}
+
+					NxtClosingBracket++;
+				}
+				if (
+					NxtClosingBracket < inpLen    &&
+					inp[NxtClosingBracket] == ']' &&
+					BracketDepth == 0
+				) {
+					if (didArithOccur == 0) {
+						i = NxtClosingBracket + 1;
+					} else {
+						D_WRITE(
+							"\tif (data[dataPtr] == 0) {\n"
+							"\t\t goto CmdAfter_CB_%ld;\n"
+							"\t}\n"
+							"\nCmdAfter_OB_%ld:\n",
+							NxtClosingBracket, i
+						);
+					}
+				} else {
+					return Bf_UNMATCHED_CLOSE_BRACKET;
+				}
+				break;
+			}
+			case ']': {
+				int64_t PrvOpeningBracket = i - 1;
+				int64_t BracketDepth = 0;
+				int64_t LineOff = 0;
+				while (1) {
+					if (PrvOpeningBracket <= 0) break;
+					else if (inp[PrvOpeningBracket] == ']') BracketDepth++;
+					else if (inp[PrvOpeningBracket] == '[') {
+						if (BracketDepth == 0) break;
+						else BracketDepth--;
+					} else if (inp[PrvOpeningBracket] == '\n') {
+						LineOff++;
+					}
+
+					PrvOpeningBracket--;
+				}
+				if (
+					PrvOpeningBracket > -1        &&
+					inp[PrvOpeningBracket] == '[' &&
+					BracketDepth == 0
+				) {
+					int64_t ColOff = 0;
+					for (
+						ColOff = 0;
+						PrvOpeningBracket + ColOff >= 0 && inp[PrvOpeningBracket + ColOff] != '\n';
+						ColOff--
+					);
+					ColOff = ColOff > 0 ? ColOff : (ColOff * -1);
+
+					D_WRITE(
+						"\tif (data[dataPtr] != 0) {\n"
+						"\t\t goto CmdAfter_OB_%ld;\n"
+						"\t}\n"
+						"\nCmdAfter_CB_%ld:\n",
+						PrvOpeningBracket, i
+					);
+				} else {
+					return Bf_UNMATCHED_OPEN_BRACKET;
+				}
+				break;
+			}
+		}
+	}
+
+	D_WRITE("\treturn 0;\n}\n");
+
+	#undef D_WRITE
+
+	if (outStrLen < outStrSize) {
+		outStr = realloc(outStr, outStrLen + 1);
+	}
+
+	*out = outStr;
+	*outLen = outStrLen;
 	return 0;
 }
 
